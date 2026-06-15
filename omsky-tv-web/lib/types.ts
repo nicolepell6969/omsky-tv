@@ -12,6 +12,10 @@ export interface Channel {
   replaced_by: string | null;
   website: string | null;
   logo?: string;
+  streamUrl?: string;
+  streamQuality?: string;
+  http_referrer?: string;
+  user_agent?: string;
 }
 
 export interface Stream {

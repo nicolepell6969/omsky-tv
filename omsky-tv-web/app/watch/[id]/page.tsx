@@ -5,11 +5,11 @@ import { useParams, useRouter } from "next/navigation";
 import { VideoPlayer } from "@/components/VideoPlayer";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { ArrowLeft, Heart, Share2, Loader2 } from "lucide-react";
+import { ArrowLeft, Heart, Share2, Loader2, AlertCircle } from "lucide-react";
 import { useAppStore } from "@/lib/store";
 import { getCountryFlag } from "@/lib/utils";
 import axios from "axios";
-import { Channel, Stream } from "@/lib/types";
+import { Channel } from "@/lib/types";
 import { useEffect, useState } from "react";
 
 export default function WatchPage() {
@@ -17,7 +17,6 @@ export default function WatchPage() {
   const router = useRouter();
   const channelId = params.id as string;
   const { addToHistory, isFavorite, addFavorite, removeFavorite } = useAppStore();
-  const [currentStreamIndex, setCurrentStreamIndex] = useState(0);
   const [watchStartTime] = useState(Date.now());
 
   const { data: channel, isLoading: channelLoading } = useQuery({
@@ -25,16 +24,6 @@ export default function WatchPage() {
     queryFn: async () => {
       const response = await axios.get<Channel[]>("/api/channels");
       return response.data.find((c) => c.id === channelId);
-    },
-  });
-
-  const { data: streams, isLoading: streamsLoading } = useQuery({
-    queryKey: ["streams", channelId],
-    queryFn: async () => {
-      const response = await axios.get<Stream[]>(
-        `/api/streams?channelId=${channelId}`
-      );
-      return response.data;
     },
   });
 
@@ -77,13 +66,7 @@ export default function WatchPage() {
     }
   };
 
-  const handleStreamError = () => {
-    if (streams && currentStreamIndex < streams.length - 1) {
-      setCurrentStreamIndex(currentStreamIndex + 1);
-    }
-  };
-
-  if (channelLoading || streamsLoading) {
+  if (channelLoading) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[60vh]">
         <Loader2 className="h-12 w-12 animate-spin text-primary mb-4" />
@@ -104,168 +87,125 @@ export default function WatchPage() {
     );
   }
 
-  if (!streams || streams.length === 0) {
+  // Check if channel has stream URL
+  if (!channel.streamUrl) {
     return (
-      <div className="container px-4 py-12 text-center">
-        <h1 className="text-2xl font-bold mb-4">No streams available</h1>
-        <p className="text-muted-foreground mb-6">
-          This channel currently has no active streams.
-        </p>
-        <Button onClick={() => router.push("/")}>
+      <div className="container px-4 py-12">
+        <Button onClick={() => router.back()} variant="ghost" className="mb-8">
           <ArrowLeft className="mr-2 h-4 w-4" />
-          Back to Home
+          Back
         </Button>
+        
+        <Card className="max-w-2xl mx-auto">
+          <CardContent className="p-8 text-center">
+            <AlertCircle className="h-16 w-16 text-yellow-500 mx-auto mb-4" />
+            <h1 className="text-2xl font-bold mb-4">Stream Not Available</h1>
+            <p className="text-muted-foreground mb-6">
+              Sorry, this channel does not have an active stream URL at the moment.
+            </p>
+            <div className="bg-muted/50 rounded-lg p-4 mb-6">
+              <h2 className="font-semibold mb-2">{channel.name}</h2>
+              <p className="text-sm text-muted-foreground">
+                {getCountryFlag(channel.country)} {channel.country}
+              </p>
+              {channel.categories.length > 0 && (
+                <p className="text-sm text-muted-foreground mt-2">
+                  {channel.categories.join(", ")}
+                </p>
+              )}
+            </div>
+            <Button onClick={() => router.push("/")}>
+              Browse Other Channels
+            </Button>
+          </CardContent>
+        </Card>
       </div>
     );
   }
 
-  const currentStream = streams[currentStreamIndex];
-
   return (
-    <div className="container px-4 py-6 space-y-6">
+    <div className="container px-4 py-8">
       {/* Back Button */}
-      <Button variant="ghost" onClick={() => router.push("/")}>
+      <Button onClick={() => router.back()} variant="ghost" className="mb-6">
         <ArrowLeft className="mr-2 h-4 w-4" />
-        Back to Channels
+        Back
       </Button>
 
       {/* Video Player */}
-      <div className="grid lg:grid-cols-3 gap-6">
-        <div className="lg:col-span-2 space-y-4">
-          <VideoPlayer
-            src={currentStream.url}
-            title={channel.name}
-            onError={handleStreamError}
-          />
+      <Card className="overflow-hidden mb-8">
+        <VideoPlayer
+          src={channel.streamUrl}
+          poster={channel.logo}
+          http_referrer={channel.http_referrer}
+          user_agent={channel.user_agent}
+        />
+      </Card>
 
-          {/* Channel Info */}
-          <Card>
-            <CardContent className="p-6 space-y-4">
-              <div className="flex items-start justify-between gap-4">
-                <div className="space-y-2 flex-1">
-                  <div className="flex items-center gap-3">
-                    <h1 className="text-2xl font-bold">{channel.name}</h1>
-                    <span className="text-3xl">
-                      {getCountryFlag(channel.country)}
-                    </span>
-                  </div>
-                  {channel.alt_names.length > 0 && (
-                    <p className="text-sm text-muted-foreground">
-                      Also known as: {channel.alt_names.join(", ")}
-                    </p>
-                  )}
-                </div>
-
-                <div className="flex gap-2">
-                  <Button
-                    variant={favorite ? "default" : "outline"}
-                    size="icon"
-                    onClick={handleFavorite}
-                  >
-                    <Heart
-                      className={`h-5 w-5 ${
-                        favorite ? "fill-current" : ""
-                      }`}
-                    />
-                  </Button>
-                  <Button variant="outline" size="icon" onClick={handleShare}>
-                    <Share2 className="h-5 w-5" />
-                  </Button>
-                </div>
+      {/* Channel Info */}
+      <Card>
+        <CardContent className="p-6">
+          <div className="flex items-start justify-between mb-4">
+            <div className="flex-1">
+              <h1 className="text-3xl font-bold mb-2">{channel.name}</h1>
+              <div className="flex items-center gap-4 text-muted-foreground">
+                <span className="flex items-center gap-2">
+                  {getCountryFlag(channel.country)}
+                  <span className="text-sm">{channel.country}</span>
+                </span>
+                {channel.streamQuality && (
+                  <span className="inline-flex items-center rounded-full bg-primary/10 px-2 py-1 text-xs font-medium text-primary ring-1 ring-inset ring-primary/20">
+                    {channel.streamQuality}
+                  </span>
+                )}
               </div>
+            </div>
+            <div className="flex gap-2">
+              <Button
+                variant={favorite ? "default" : "outline"}
+                size="icon"
+                onClick={handleFavorite}
+              >
+                <Heart className={favorite ? "fill-current" : ""} />
+              </Button>
+              <Button variant="outline" size="icon" onClick={handleShare}>
+                <Share2 />
+              </Button>
+            </div>
+          </div>
 
+          {/* Categories */}
+          {channel.categories.length > 0 && (
+            <div className="mb-4">
+              <h3 className="text-sm font-medium mb-2">Categories</h3>
               <div className="flex flex-wrap gap-2">
                 {channel.categories.map((cat) => (
                   <span
                     key={cat}
-                    className="px-3 py-1 rounded-full bg-secondary text-secondary-foreground text-sm"
+                    className="inline-flex items-center rounded-full bg-muted px-3 py-1 text-xs font-medium"
                   >
                     {cat}
                   </span>
                 ))}
               </div>
+            </div>
+          )}
 
-              {channel.website && (
-                <div className="pt-2 border-t">
-                  <a
-                    href={channel.website}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-sm text-primary hover:underline"
-                  >
-                    Visit official website →
-                  </a>
-                </div>
-              )}
-
-              {streams.length > 1 && (
-                <div className="pt-2 border-t">
-                  <p className="text-sm text-muted-foreground">
-                    Stream {currentStreamIndex + 1} of {streams.length}
-                    {currentStreamIndex < streams.length - 1 &&
-                      " - Will try next stream if current fails"}
-                  </p>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-
-          {/* Ad Space */}
-          <Card className="bg-secondary/50">
-            <CardContent className="p-6 text-center">
-              <p className="text-sm text-muted-foreground">
-                Advertisement Space
-              </p>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Sidebar */}
-        <div className="space-y-4">
-          <Card>
-            <CardContent className="p-4">
-              <h3 className="font-semibold mb-4">Channel Details</h3>
-              <div className="space-y-2 text-sm">
-                <div>
-                  <span className="text-muted-foreground">Country:</span>
-                  <span className="ml-2 font-medium">
-                    {getCountryFlag(channel.country)} {channel.country}
-                  </span>
-                </div>
-                {channel.network && (
-                  <div>
-                    <span className="text-muted-foreground">Network:</span>
-                    <span className="ml-2 font-medium">{channel.network}</span>
-                  </div>
-                )}
-                {channel.launched && (
-                  <div>
-                    <span className="text-muted-foreground">Launched:</span>
-                    <span className="ml-2 font-medium">{channel.launched}</span>
-                  </div>
-                )}
-                {channel.owners.length > 0 && (
-                  <div>
-                    <span className="text-muted-foreground">Owners:</span>
-                    <span className="ml-2 font-medium">
-                      {channel.owners.join(", ")}
-                    </span>
-                  </div>
-                )}
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Ad Space Sidebar */}
-          <Card className="bg-secondary/50">
-            <CardContent className="p-6 text-center min-h-[300px] flex items-center justify-center">
-              <p className="text-sm text-muted-foreground">
-                Advertisement Space
-              </p>
-            </CardContent>
-          </Card>
-        </div>
-      </div>
+          {/* Website */}
+          {channel.website && (
+            <div>
+              <h3 className="text-sm font-medium mb-2">Website</h3>
+              <a
+                href={channel.website}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-sm text-primary hover:underline"
+              >
+                {channel.website}
+              </a>
+            </div>
+          )}
+        </CardContent>
+      </Card>
     </div>
   );
 }

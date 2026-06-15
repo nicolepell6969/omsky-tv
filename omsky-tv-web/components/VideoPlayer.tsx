@@ -6,11 +6,19 @@ import { Loader2 } from "lucide-react";
 
 interface VideoPlayerProps {
   src: string;
-  title?: string;
+  poster?: string;
+  http_referrer?: string;
+  user_agent?: string;
   onError?: () => void;
 }
 
-export function VideoPlayer({ src, title, onError }: VideoPlayerProps) {
+export function VideoPlayer({ 
+  src, 
+  poster, 
+  http_referrer, 
+  user_agent, 
+  onError 
+}: VideoPlayerProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const hlsRef = useRef<Hls | null>(null);
   const [loading, setLoading] = useState(true);
@@ -29,13 +37,30 @@ export function VideoPlayer({ src, title, onError }: VideoPlayerProps) {
       hlsRef.current = null;
     }
 
+    // Build HLS config with custom headers if needed
+    const hlsConfig: Partial<Hls['config']> = {
+      enableWorker: true,
+      lowLatencyMode: true,
+      backBufferLength: 90,
+      maxBufferLength: 30,
+      maxMaxBufferLength: 60,
+    };
+
+    // Add custom headers for referrer/user-agent if provided
+    if (http_referrer || user_agent) {
+      hlsConfig.xhrSetup = (xhr: XMLHttpRequest) => {
+        if (http_referrer) {
+          xhr.setRequestHeader('Referer', http_referrer);
+        }
+        if (user_agent) {
+          xhr.setRequestHeader('User-Agent', user_agent);
+        }
+      };
+    }
+
     // Check if HLS is supported
     if (Hls.isSupported()) {
-      const hls = new Hls({
-        enableWorker: true,
-        lowLatencyMode: true,
-        backBufferLength: 90,
-      });
+      const hls = new Hls(hlsConfig as any);
       hlsRef.current = hls;
 
       hls.loadSource(src);
@@ -50,96 +75,102 @@ export function VideoPlayer({ src, title, onError }: VideoPlayerProps) {
 
       hls.on(Hls.Events.ERROR, (event, data) => {
         console.error('HLS Error:', data);
+        
         if (data.fatal) {
-          setError(true);
-          setLoading(false);
-          onError?.();
+          switch (data.type) {
+            case Hls.ErrorTypes.NETWORK_ERROR:
+              console.log('Network error, attempting recovery...');
+              hls.startLoad();
+              break;
+            case Hls.ErrorTypes.MEDIA_ERROR:
+              console.log('Media error, attempting recovery...');
+              hls.recoverMediaError();
+              break;
+            default:
+              console.log('Fatal error, cannot recover');
+              setError(true);
+              setLoading(false);
+              onError?.();
+              break;
+          }
         }
       });
+
+      video.addEventListener('loadeddata', () => {
+        setLoading(false);
+      });
+
+      video.addEventListener('waiting', () => {
+        setLoading(true);
+      });
+
+      video.addEventListener('playing', () => {
+        setLoading(false);
+      });
+
     } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
       // Native HLS support (Safari)
       video.src = src;
+      
       video.addEventListener('loadedmetadata', () => {
         video.play().catch((err) => {
           console.log('Autoplay prevented:', err);
           setLoading(false);
         });
       });
+
+      video.addEventListener('loadeddata', () => {
+        setLoading(false);
+      });
+
+      video.addEventListener('error', () => {
+        setError(true);
+        setLoading(false);
+        onError?.();
+      });
     } else {
       setError(true);
       setLoading(false);
+      console.error('HLS not supported in this browser');
     }
 
-    // Video event handlers
-    const handleCanPlay = () => {
-      setLoading(false);
-      setError(false);
-    };
-
-    const handleError = () => {
-      setLoading(false);
-      setError(true);
-      onError?.();
-    };
-
-    const handleWaiting = () => {
-      setLoading(true);
-    };
-
-    const handlePlaying = () => {
-      setLoading(false);
-    };
-
-    video.addEventListener('canplay', handleCanPlay);
-    video.addEventListener('error', handleError);
-    video.addEventListener('waiting', handleWaiting);
-    video.addEventListener('playing', handlePlaying);
-
+    // Cleanup
     return () => {
-      video.removeEventListener('canplay', handleCanPlay);
-      video.removeEventListener('error', handleError);
-      video.removeEventListener('waiting', handleWaiting);
-      video.removeEventListener('playing', handlePlaying);
-      
       if (hlsRef.current) {
         hlsRef.current.destroy();
         hlsRef.current = null;
       }
     };
-  }, [src, onError]);
+  }, [src, http_referrer, user_agent, onError]);
+
+  if (error) {
+    return (
+      <div className="relative aspect-video bg-black rounded-lg overflow-hidden">
+        <div className="absolute inset-0 flex flex-col items-center justify-center text-white p-8">
+          <p className="text-xl mb-2">⚠️ Stream Error</p>
+          <p className="text-sm text-gray-400 text-center">
+            Unable to load the stream. The channel may be offline or the stream URL is invalid.
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <div className="relative w-full aspect-video bg-black rounded-lg overflow-hidden">
+    <div className="relative aspect-video bg-black rounded-lg overflow-hidden">
+      {loading && (
+        <div className="absolute inset-0 flex items-center justify-center bg-black/50 z-10">
+          <Loader2 className="h-12 w-12 animate-spin text-white" />
+        </div>
+      )}
       <video
         ref={videoRef}
         className="w-full h-full"
         controls
         playsInline
-        crossOrigin="anonymous"
+        poster={poster}
+        preload="metadata"
       />
-
-      {loading && !error && (
-        <div className="absolute inset-0 flex items-center justify-center bg-black/80 pointer-events-none">
-          <div className="text-center space-y-4">
-            <Loader2 className="h-12 w-12 animate-spin text-[#1ed760] mx-auto" />
-            <p className="text-white text-sm">Loading stream...</p>
-          </div>
-        </div>
-      )}
-
-      {error && (
-        <div className="absolute inset-0 flex items-center justify-center bg-black/90">
-          <div className="text-center space-y-4 px-4">
-            <div className="text-[#f3727f] text-6xl">⚠️</div>
-            <div>
-              <h3 className="text-white text-xl font-semibold">Stream Unavailable</h3>
-              <p className="text-[#b3b3b3] text-sm mt-2">
-                This channel is currently offline or the stream URL is invalid.
-              </p>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }

@@ -8,6 +8,25 @@ interface Channel {
   categories: string[];
   is_nsfw: boolean;
   closed: string | null;
+  website: string | null;
+  logo?: string;
+}
+
+interface Stream {
+  channel: string | null;
+  url: string;
+  http_referrer?: string | null;
+  user_agent?: string | null;
+  timeshift?: string | null;
+  quality?: string | null;
+  title?: string | null;
+}
+
+interface ChannelWithStream extends Channel {
+  streamUrl?: string;
+  streamQuality?: string;
+  http_referrer?: string;
+  user_agent?: string;
 }
 
 const IPTV_API_BASE = 'https://iptv-org.github.io/api';
@@ -15,17 +34,59 @@ const IPTV_API_BASE = 'https://iptv-org.github.io/api';
 export const dynamic = "force-dynamic";
 export const revalidate = 3600; // 1 hour
 
+let cachedData: {
+  channels: ChannelWithStream[];
+  timestamp: number;
+} | null = null;
+
+const CACHE_DURATION = 3600 * 1000; // 1 hour in milliseconds
+
 export async function GET() {
   try {
-    const response = await axios.get<Channel[]>(
-      `${IPTV_API_BASE}/channels.json`,
-      { 
+    // Check cache first
+    const now = Date.now();
+    if (cachedData && (now - cachedData.timestamp) < CACHE_DURATION) {
+      console.log('Returning cached channels with streams');
+      return NextResponse.json(cachedData.channels, {
+        headers: {
+          'Cache-Control': 'public, s-maxage=3600, stale-while-revalidate=7200',
+        },
+      });
+    }
+
+    console.log('Fetching fresh data from IPTV-ORG API...');
+    
+    // Fetch both channels and streams in parallel
+    const [channelsResponse, streamsResponse] = await Promise.all([
+      axios.get<Channel[]>(`${IPTV_API_BASE}/channels.json`, { 
         timeout: 30000,
         maxContentLength: 50 * 1024 * 1024 // 50MB
-      }
-    );
-    const channels = response.data;
+      }),
+      axios.get<Stream[]>(`${IPTV_API_BASE}/streams.json`, { 
+        timeout: 30000,
+        maxContentLength: 100 * 1024 * 1024 // 100MB
+      })
+    ]);
+
+    const channels = channelsResponse.data;
+    const streams = streamsResponse.data;
+
+    console.log(`Fetched ${channels.length} channels and ${streams.length} streams`);
+
+    // Create a Map for fast stream lookup by channel ID
+    const streamsByChannel = new Map<string, Stream[]>();
     
+    streams.forEach(stream => {
+      if (stream.channel) {
+        if (!streamsByChannel.has(stream.channel)) {
+          streamsByChannel.set(stream.channel, []);
+        }
+        streamsByChannel.get(stream.channel)!.push(stream);
+      }
+    });
+
+    console.log(`Mapped streams to ${streamsByChannel.size} channels`);
+
     // Filter: Focus on Indonesia & Asia region
     const asiaCountries = [
       'ID', 'MY', 'SG', 'TH', 'PH', 'VN', 'KH', 'LA', 'MM', 'BN', // Southeast Asia
@@ -34,17 +95,55 @@ export async function GET() {
       'AE', 'SA', 'QA', 'KW', 'OM', 'BH', 'JO', 'LB', 'TR', 'IL', // Middle East
     ];
     
+    // Helper function to get best stream for a channel
+    const getBestStream = (channelId: string): Stream | null => {
+      const channelStreams = streamsByChannel.get(channelId);
+      if (!channelStreams || channelStreams.length === 0) return null;
+
+      // Priority: HD quality > 720p > no quality specified
+      const priorities: Record<string, number> = {
+        '1080p': 5,
+        '720p': 4,
+        '576p': 3,
+        '480p': 2,
+        '360p': 1,
+      };
+
+      channelStreams.sort((a, b) => {
+        const priorityA = priorities[a.quality || ''] || 0;
+        const priorityB = priorities[b.quality || ''] || 0;
+        return priorityB - priorityA;
+      });
+
+      return channelStreams[0];
+    };
+
+    // Merge channels with streams
+    const channelsWithStreams: ChannelWithStream[] = channels
+      .filter(c => !c.closed && !c.is_nsfw)
+      .map(channel => {
+        const bestStream = getBestStream(channel.id);
+        
+        return {
+          ...channel,
+          streamUrl: bestStream?.url,
+          streamQuality: bestStream?.quality || undefined,
+          http_referrer: bestStream?.http_referrer || undefined,
+          user_agent: bestStream?.user_agent || undefined,
+        };
+      });
+
     // Priority: Indonesia first, then Asia, then rest of world
-    const indonesiaChannels = channels.filter(
-      (c) => !c.closed && !c.is_nsfw && c.country === 'ID'
+    const indonesiaChannels = channelsWithStreams.filter(
+      (c) => c.country === 'ID'
     );
     
-    const asiaChannels = channels.filter(
-      (c) => !c.closed && !c.is_nsfw && c.country !== 'ID' && asiaCountries.includes(c.country)
+    const asiaChannels = channelsWithStreams.filter(
+      (c) => c.country !== 'ID' && asiaCountries.includes(c.country)
     );
     
-    const otherChannels = channels.filter(
-      (c) => !c.closed && !c.is_nsfw && !asiaCountries.includes(c.country)
+    const otherChannels = channelsWithStreams.filter(
+      (c) => !asiaCountries.includes(c.country)
     );
     
     // Combine: Indonesia + Asia (unlimited) + limited others
@@ -54,13 +153,38 @@ export async function GET() {
       ...otherChannels.slice(0, 500) // Only 500 from other regions
     ];
 
-    return NextResponse.json(activeChannels, {
+    // Filter out channels without streams
+    const channelsWithWorkingStreams = activeChannels.filter(c => c.streamUrl);
+
+    console.log(`Returning ${channelsWithWorkingStreams.length} channels with working streams`);
+    console.log(`  - Indonesia: ${indonesiaChannels.filter(c => c.streamUrl).length}`);
+    console.log(`  - Asia: ${asiaChannels.filter(c => c.streamUrl).length}`);
+    console.log(`  - Others: ${otherChannels.slice(0, 500).filter(c => c.streamUrl).length}`);
+
+    // Update cache
+    cachedData = {
+      channels: channelsWithWorkingStreams,
+      timestamp: now
+    };
+
+    return NextResponse.json(channelsWithWorkingStreams, {
       headers: {
         'Cache-Control': 'public, s-maxage=3600, stale-while-revalidate=7200',
       },
     });
   } catch (error) {
     console.error("Error fetching channels:", error);
+    
+    // Return cached data if available on error
+    if (cachedData) {
+      console.log('Returning stale cache due to error');
+      return NextResponse.json(cachedData.channels, {
+        headers: {
+          'Cache-Control': 'public, s-maxage=60, stale-while-revalidate=300',
+        },
+      });
+    }
+    
     return NextResponse.json(
       { error: "Failed to fetch channels" },
       { status: 500 }
