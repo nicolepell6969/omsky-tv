@@ -7,8 +7,39 @@ interface SearchBarProps {
   countries: string[];
 }
 
+// Asian countries mapping for filter display
+const ASIAN_COUNTRIES = {
+  'ID': 'Indonesia',
+  'MY': 'Malaysia',
+  'SG': 'Singapore',
+  'TH': 'Thailand',
+  'PH': 'Philippines',
+  'VN': 'Vietnam',
+  'JP': 'Japan',
+  'KR': 'South Korea',
+  'CN': 'China',
+  'IN': 'India',
+  'TW': 'Taiwan',
+  'HK': 'Hong Kong',
+  'PK': 'Pakistan',
+  'BD': 'Bangladesh',
+  'AE': 'UAE',
+  'SA': 'Saudi Arabia',
+};
+
 export function SearchBar({ countries }: SearchBarProps) {
   const { searchQuery, setSearchQuery, selectedCountry, setSelectedCountry } = useAppStore();
+
+  // Filter to show only Asian countries that actually have channels
+  const asianCountriesWithChannels = Object.keys(ASIAN_COUNTRIES)
+    .filter(code => countries.includes(code))
+    .sort((a, b) => {
+      // Indonesia first, then alphabetical
+      if (a === 'ID') return -1;
+      if (b === 'ID') return 1;
+      return ASIAN_COUNTRIES[a as keyof typeof ASIAN_COUNTRIES]
+        .localeCompare(ASIAN_COUNTRIES[b as keyof typeof ASIAN_COUNTRIES]);
+    });
 
   return (
     <div className="space-y-4">
@@ -32,7 +63,7 @@ export function SearchBar({ countries }: SearchBarProps) {
         )}
       </div>
 
-      {/* Country Filter */}
+      {/* Country Filter - Asian Countries Only */}
       <div className="flex flex-wrap gap-2">
         <button
           onClick={() => setSelectedCountry("all")}
@@ -42,15 +73,15 @@ export function SearchBar({ countries }: SearchBarProps) {
         >
           All Countries
         </button>
-        {countries.slice(0, 15).map((country) => (
+        {asianCountriesWithChannels.map((countryCode) => (
           <button
-            key={country}
-            onClick={() => setSelectedCountry(country)}
+            key={countryCode}
+            onClick={() => setSelectedCountry(countryCode)}
             className={`spotify-chip ${
-              selectedCountry === country ? "spotify-chip-active" : ""
+              selectedCountry === countryCode ? "spotify-chip-active" : ""
             }`}
           >
-            {country}
+            {ASIAN_COUNTRIES[countryCode as keyof typeof ASIAN_COUNTRIES]}
           </button>
         ))}
       </div>
