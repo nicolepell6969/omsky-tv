@@ -37,7 +37,7 @@ export const useAppStore = create<AppState>()((
       currentCategory: null,
       currentCountry: null,
       selectedCategory: null,
-      selectedCountry: null,
+      selectedCountry: "all",
       searchQuery: '',
 
       addFavorite: (channelId) => {
