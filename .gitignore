@@ -1,0 +1,63 @@
+# Dependencies
+node_modules/
+.npm/
+.pnp
+.pnp.js
+
+# Testing
+coverage/
+
+# Next.js
+omsky-tv-web/.next/
+omsky-tv-web/out/
+omsky-tv-web/build/
+omsky-tv-web/dist/
+
+# Production
+build/
+dist/
+
+# Misc
+.DS_Store
+*.pem
+
+# Debug
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Local env files
+.env
+.env*.local
+
+# Vercel
+.vercel
+
+# Typescript
+*.tsbuildinfo
+next-env.d.ts
+
+# Android
+omsky-tv-android/.gradle/
+omsky-tv-android/local.properties
+omsky-tv-android/.idea/
+omsky-tv-android/.DS_Store
+omsky-tv-android/build/
+omsky-tv-android/captures/
+omsky-tv-android/.externalNativeBuild/
+omsky-tv-android/.cxx/
+omsky-tv-android/*.iml
+omsky-tv-android/*.apk
+omsky-tv-android/*.aab
+omsky-tv-android/app/release/
+omsky-tv-android/app/debug/
+
+# PM2
+omsky-tv-web/.pm2/
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
