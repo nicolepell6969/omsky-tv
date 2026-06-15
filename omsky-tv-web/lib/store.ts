@@ -11,15 +11,20 @@ interface AppState {
   }>;
   currentCategory: string | null;
   currentCountry: string | null;
+  selectedCategory: string | null;
+  selectedCountry: string | null;
   searchQuery: string;
   
   // Actions
   addFavorite: (channelId: string) => void;
   removeFavorite: (channelId: string) => void;
+  toggleFavorite: (channelId: string) => void;
   isFavorite: (channelId: string) => boolean;
   addToHistory: (channelId: string, duration: number) => void;
   setCategory: (category: string | null) => void;
   setCountry: (country: string | null) => void;
+  setSelectedCategory: (category: string | null) => void;
+  setSelectedCountry: (country: string | null) => void;
   setSearchQuery: (query: string) => void;
   clearFilters: () => void;
 }
@@ -31,6 +36,8 @@ export const useAppStore = create<AppState>()((
       watchHistory: [],
       currentCategory: null,
       currentCountry: null,
+      selectedCategory: null,
+      selectedCountry: null,
       searchQuery: '',
 
       addFavorite: (channelId) => {
@@ -43,6 +50,17 @@ export const useAppStore = create<AppState>()((
         set((state) => ({
           favorites: state.favorites.filter((id) => id !== channelId),
         }));
+      },
+
+      toggleFavorite: (channelId) => {
+        set((state) => {
+          const isFav = state.favorites.includes(channelId);
+          return {
+            favorites: isFav
+              ? state.favorites.filter((id) => id !== channelId)
+              : [...state.favorites, channelId],
+          };
+        });
       },
 
       isFavorite: (channelId) => {
@@ -68,6 +86,14 @@ export const useAppStore = create<AppState>()((
         set({ currentCountry: country });
       },
 
+      setSelectedCategory: (category) => {
+        set({ selectedCategory: category });
+      },
+
+      setSelectedCountry: (country) => {
+        set({ selectedCountry: country });
+      },
+
       setSearchQuery: (query) => {
         set({ searchQuery: query });
       },
@@ -76,6 +102,8 @@ export const useAppStore = create<AppState>()((
         set({
           currentCategory: null,
           currentCountry: null,
+          selectedCategory: null,
+          selectedCountry: null,
           searchQuery: '',
         });
       },

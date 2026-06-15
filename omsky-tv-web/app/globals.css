@@ -1,26 +1,128 @@
-@import "tailwindcss";
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
-
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+  /* Spotify Colors */
+  --spotify-black: #121212;
+  --spotify-dark: #181818;
+  --spotify-card: #1f1f1f;
+  --spotify-green: #1ed760;
+  --spotify-green-dark: #1db954;
+  --spotify-white: #ffffff;
+  --spotify-silver: #b3b3b3;
+  --spotify-light: #fdfdfd;
+  --spotify-border: #4d4d4d;
+  --spotify-border-light: #7c7c7c;
+  --spotify-red: #f3727f;
+  --spotify-orange: #ffa42b;
+  --spotify-blue: #539df5;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background-color: #121212;
+  color: #ffffff;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-weight: 700;
+}
+
+.spotify-card {
+  background-color: #181818;
+  border-radius: 8px;
+  padding: 16px;
+  transition: all 0.2s;
+}
+
+.spotify-card:hover {
+  background-color: #252525;
+  box-shadow: rgba(0, 0, 0, 0.3) 0px 8px 8px;
+}
+
+.spotify-button {
+  background-color: #1f1f1f;
+  color: #ffffff;
+  padding: 8px 16px;
+  border-radius: 9999px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  font-size: 14px;
+  transition: all 0.2s;
+  border: none;
+  cursor: pointer;
+}
+
+.spotify-button:hover {
+  transform: scale(1.05);
+}
+
+.spotify-button-primary {
+  background-color: #1ed760;
+  color: #000000;
+  padding: 12px 24px;
+  border-radius: 9999px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  font-size: 14px;
+  transition: all 0.2s;
+  border: none;
+  cursor: pointer;
+}
+
+.spotify-button-primary:hover {
+  transform: scale(1.05);
+  background-color: #1db954;
+}
+
+.spotify-input {
+  background-color: #1f1f1f;
+  color: #ffffff;
+  border-radius: 9999px;
+  padding: 12px 48px;
+  outline: none;
+  border: 1px solid transparent;
+  transition: all 0.2s;
+}
+
+.spotify-input:focus {
+  border-color: #ffffff;
+}
+
+.spotify-pill {
+  display: inline-block;
+  padding: 8px 16px;
+  border-radius: 9999px;
+  background-color: #1f1f1f;
+  color: #ffffff;
+  font-size: 14px;
+  font-weight: 500;
+  transition: all 0.2s;
+  cursor: pointer;
+  border: none;
+}
+
+.spotify-pill:hover {
+  background-color: #272727;
+}
+
+.spotify-play-button {
+  background-color: #1ed760;
+  color: #000000;
+  border-radius: 50%;
+  padding: 12px;
+  transition: all 0.2s;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  cursor: pointer;
+}
+
+.spotify-play-button:hover {
+  transform: scale(1.1);
+  background-color: #1db954;
 }

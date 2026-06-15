@@ -3,101 +3,113 @@
 import { useQuery } from "@tanstack/react-query";
 import { ChannelGrid } from "@/components/ChannelGrid";
 import { FilterBar } from "@/components/FilterBar";
-import { Loader2, Tv } from "lucide-react";
-import axios from "axios";
-import { Channel } from "@/lib/types";
+import { Loader2, Tv, TrendingUp, Sparkles } from "lucide-react";
 import { useMemo } from "react";
+import { useAppStore } from "@/lib/store";
+import type { Channel } from "@/lib/types";
+
+const fetchChannels = async (): Promise<Channel[]> => {
+  const res = await fetch("/api/channels");
+  if (!res.ok) throw new Error("Failed to fetch channels");
+  return res.json();
+};
 
 export default function HomePage() {
+  const { searchQuery, selectedCategory, selectedCountry } = useAppStore();
+
   const { data: channels, isLoading, error } = useQuery({
     queryKey: ["channels"],
-    queryFn: async () => {
-      const response = await axios.get<Channel[]>("/api/channels");
-      return response.data;
-    },
+    queryFn: fetchChannels,
     staleTime: 1000 * 60 * 60, // 1 hour
-    gcTime: 1000 * 60 * 60 * 2, // 2 hours
   });
 
   const categories = useMemo(() => {
     if (!channels) return [];
     const cats = new Set<string>();
-    channels.forEach((c) => c.categories.forEach((cat) => cats.add(cat)));
+    channels.forEach((c) => c.categories?.forEach((cat) => cats.add(cat)));
     return Array.from(cats).sort();
   }, [channels]);
 
   const countries = useMemo(() => {
     if (!channels) return [];
-    const countryMap = new Map<string, string>();
-    channels.forEach((c) => {
-      if (!countryMap.has(c.country)) {
-        countryMap.set(c.country, c.country);
-      }
-    });
-    return Array.from(countryMap.entries())
-      .map(([code, name]) => ({ code, name }))
-      .sort((a, b) => a.name.localeCompare(b.name));
+    const countrySet = new Set(channels.map((c) => c.country));
+    return Array.from(countrySet).sort();
   }, [channels]);
 
   if (isLoading) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-[60vh]">
-        <Loader2 className="h-12 w-12 animate-spin text-primary mb-4" />
-        <p className="text-lg text-muted-foreground">Loading channels...</p>
-        <p className="text-sm text-muted-foreground mt-2">This may take a moment on first load</p>
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center space-y-4">
+          <Loader2 className="w-12 h-12 text-[#1ed760] animate-spin mx-auto" />
+          <p className="text-[#b3b3b3] text-lg">Loading channels...</p>
+        </div>
       </div>
     );
   }
 
   if (error) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-[60vh]">
-        <Tv className="h-16 w-16 text-muted-foreground mb-4" />
-        <p className="text-xl text-muted-foreground">Failed to load channels</p>
-        <p className="text-sm text-muted-foreground mt-2">Please try refreshing the page</p>
-      </div>
-    );
-  }
-
-  if (!channels || channels.length === 0) {
-    return (
-      <div className="flex flex-col items-center justify-center min-h-[60vh]">
-        <Tv className="h-16 w-16 text-muted-foreground mb-4" />
-        <p className="text-xl text-muted-foreground">No channels available</p>
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center space-y-4">
+          <Tv className="w-12 h-12 text-[#f3727f] mx-auto" />
+          <p className="text-[#f3727f] text-lg">Failed to load channels</p>
+          <button
+            onClick={() => window.location.reload()}
+            className="spotify-button-primary"
+          >
+            Retry
+          </button>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="container px-4 py-8 space-y-8">
+    <div className="min-h-screen">
       {/* Hero Section */}
-      <section className="text-center space-y-4 py-12">
-        <h1 className="text-4xl md:text-6xl font-bold bg-gradient-to-r from-primary to-purple-600 bg-clip-text text-transparent">
-          Welcome to Omsky TV
-        </h1>
-        <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-          Watch thousands of free TV channels from around the world. Live news,
-          sports, movies, and more.
-        </p>
-        <div className="flex items-center justify-center gap-6 text-sm">
-          <div className="flex items-center gap-2">
-            <Tv className="h-5 w-5 text-primary" />
-            <span className="font-semibold">{channels.length.toLocaleString()} Channels</span>
+      <div className="bg-gradient-to-b from-[#1f1f1f] to-[#121212] px-6 pt-8 pb-6">
+        <div className="max-w-7xl mx-auto">
+          <div className="flex items-center gap-3 mb-4">
+            <div className="w-12 h-12 bg-[#1ed760] rounded-full flex items-center justify-center">
+              <Sparkles className="w-6 h-6 text-black" />
+            </div>
+            <div>
+              <h1 className="text-3xl font-bold">Omsky TV</h1>
+              <p className="text-[#b3b3b3]">Watch 5,000+ live TV channels for free</p>
+            </div>
           </div>
-          <div className="flex items-center gap-2">
-            <span className="text-2xl">🌍</span>
-            <span className="font-semibold">{countries.length}+ Countries</span>
+          
+          {/* Stats */}
+          <div className="flex gap-6 text-sm">
+            <div className="flex items-center gap-2">
+              <TrendingUp className="w-4 h-4 text-[#1ed760]" />
+              <span className="text-[#b3b3b3]">{channels?.length.toLocaleString()} Channels</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <Tv className="w-4 h-4 text-[#1ed760]" />
+              <span className="text-[#b3b3b3]">{countries.length} Countries</span>
+            </div>
           </div>
         </div>
-      </section>
+      </div>
 
-      {/* Filters */}
-      {categories.length > 0 && countries.length > 0 && (
+      {/* Main Content */}
+      <div className="max-w-7xl mx-auto px-6 py-8">
+        {/* Filters */}
         <FilterBar categories={categories} countries={countries} />
-      )}
 
-      {/* Channel Grid */}
-      <ChannelGrid channels={channels} />
+        {/* Channel Grid */}
+        <div className="mt-8">
+          {channels && channels.length > 0 ? (
+            <ChannelGrid channels={channels} />
+          ) : (
+            <div className="text-center py-20">
+              <Tv className="w-16 h-16 text-[#b3b3b3] mx-auto mb-4" />
+              <p className="text-[#b3b3b3] text-lg">No channels found</p>
+            </div>
+          )}
+        </div>
+      </div>
     </div>
   );
 }

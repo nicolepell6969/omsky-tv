@@ -1,102 +1,76 @@
 "use client";
 
 import { useAppStore } from "@/lib/store";
-import { Button } from "@/components/ui/button";
 import { X } from "lucide-react";
-import { getCountryFlag } from "@/lib/utils";
 
 interface FilterBarProps {
   categories: string[];
-  countries: Array<{ code: string; name: string }>;
+  countries: string[];
 }
 
 export function FilterBar({ categories, countries }: FilterBarProps) {
-  const {
-    currentCategory,
-    currentCountry,
-    setCategory,
-    setCountry,
-    clearFilters,
-  } = useAppStore();
-
-  const hasFilters = currentCategory || currentCountry;
+  const { selectedCategory, selectedCountry, setSelectedCategory, setSelectedCountry } = useAppStore();
 
   return (
-    <div className="space-y-4">
-      {/* Active Filters */}
-      {hasFilters && (
-        <div className="flex flex-wrap items-center gap-2">
-          <span className="text-sm text-muted-foreground">Active filters:</span>
-          {currentCategory && (
-            <Button
-              variant="secondary"
-              size="sm"
-              onClick={() => setCategory(null)}
-              className="gap-2"
-            >
-              {currentCategory}
-              <X className="h-3 w-3" />
-            </Button>
-          )}
-          {currentCountry && (
-            <Button
-              variant="secondary"
-              size="sm"
-              onClick={() => setCountry(null)}
-              className="gap-2"
-            >
-              {getCountryFlag(currentCountry)}{" "}
-              {countries.find((c) => c.code === currentCountry)?.name}
-              <X className="h-3 w-3" />
-            </Button>
-          )}
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={clearFilters}
-            className="text-muted-foreground"
-          >
-            Clear all
-          </Button>
-        </div>
-      )}
-
+    <div className="space-y-4 mb-6">
       {/* Category Filter */}
-      <div className="space-y-2">
-        <h3 className="text-sm font-semibold">Categories</h3>
+      <div>
+        <h3 className="text-sm font-semibold text-[#b3b3b3] uppercase tracking-wider mb-3">
+          Categories
+        </h3>
         <div className="flex flex-wrap gap-2">
-          {categories.slice(0, 12).map((category) => (
-            <Button
+          <button
+            onClick={() => setSelectedCategory(null)}
+            className={`spotify-pill ${
+              !selectedCategory ? 'bg-[#1ed760] text-black' : ''
+            }`}
+          >
+            All
+          </button>
+          {categories.slice(0, 10).map((category) => (
+            <button
               key={category}
-              variant={currentCategory === category ? "default" : "outline"}
-              size="sm"
-              onClick={() =>
-                setCategory(currentCategory === category ? null : category)
-              }
+              onClick={() => setSelectedCategory(category)}
+              className={`spotify-pill relative ${
+                selectedCategory === category ? 'bg-[#1ed760] text-black' : ''
+              }`}
             >
               {category}
-            </Button>
+              {selectedCategory === category && (
+                <X className="w-3 h-3 ml-1 inline" />
+              )}
+            </button>
           ))}
         </div>
       </div>
 
       {/* Country Filter */}
-      <div className="space-y-2">
-        <h3 className="text-sm font-semibold">Popular Countries</h3>
+      <div>
+        <h3 className="text-sm font-semibold text-[#b3b3b3] uppercase tracking-wider mb-3">
+          Countries
+        </h3>
         <div className="flex flex-wrap gap-2">
-          {countries.slice(0, 12).map((country) => (
-            <Button
-              key={country.code}
-              variant={currentCountry === country.code ? "default" : "outline"}
-              size="sm"
-              onClick={() =>
-                setCountry(currentCountry === country.code ? null : country.code)
-              }
-              className="gap-2"
+          <button
+            onClick={() => setSelectedCountry(null)}
+            className={`spotify-pill ${
+              !selectedCountry ? 'bg-[#1ed760] text-black' : ''
+            }`}
+          >
+            All
+          </button>
+          {countries.slice(0, 15).map((country) => (
+            <button
+              key={country}
+              onClick={() => setSelectedCountry(country)}
+              className={`spotify-pill relative ${
+                selectedCountry === country ? 'bg-[#1ed760] text-black' : ''
+              }`}
             >
-              {getCountryFlag(country.code)}
-              {country.name}
-            </Button>
+              {country}
+              {selectedCountry === country && (
+                <X className="w-3 h-3 ml-1 inline" />
+              )}
+            </button>
           ))}
         </div>
       </div>
