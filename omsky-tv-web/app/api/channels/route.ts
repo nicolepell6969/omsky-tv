@@ -41,10 +41,24 @@ let cachedData: {
 } | null = null;
 
 const CACHE_DURATION = 3600 * 1000; // 1 hour in milliseconds
-const CACHE_VERSION = '2'; // Increment to invalidate old cache
+const CACHE_VERSION = '3'; // Increment to invalidate old cache
 
 // Priority Indonesian channels (always included)
 const PRIORITY_CHANNELS: ChannelWithStream[] = [
+  {
+    id: 'piala-dunia-tvri',
+    name: 'Piala Dunia (TVRI)',
+    country: 'ID',
+    categories: ['sports'],
+    is_nsfw: false,
+    closed: null,
+    website: 'https://www.dens.tv',
+    logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/e/eb/TVRILogo2019.svg/960px-TVRILogo2019.svg.png',
+    streamUrl: 'https://op-group1-swiftservesd-1.dens.tv/s/s11/index.m3u8',
+    streamQuality: '480p',
+    http_referrer: 'https://www.dens.tv/',
+    user_agent: 'Mozilla/5.0 Windows NT 10.0; Win64; x64 AppleWebKit/537.36 KHTML, like Gecko Chrome/144.0.0.0 Safari/537.36',
+  },
   {
     id: 'TVRI.id',
     name: 'TVRI Nasional',
