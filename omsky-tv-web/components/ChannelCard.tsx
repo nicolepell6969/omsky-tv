@@ -11,7 +11,7 @@ interface ChannelCardProps {
 
 export function ChannelCard({ channel }: ChannelCardProps) {
   return (
-    <Link href={`/player/${channel.id}`} className="block group">
+    <Link href={`/watch/${channel.id}`} className="block group">
       <div className="spotify-card relative">
         {/* Image Container */}
         <div className="relative aspect-square mb-4 bg-[#282828] rounded-md overflow-hidden">
