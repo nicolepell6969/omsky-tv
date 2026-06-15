@@ -37,9 +37,11 @@ export const revalidate = 3600; // 1 hour
 let cachedData: {
   channels: ChannelWithStream[];
   timestamp: number;
+  version: string; // Cache version for invalidation
 } | null = null;
 
 const CACHE_DURATION = 3600 * 1000; // 1 hour in milliseconds
+const CACHE_VERSION = '2'; // Increment to invalidate old cache
 
 // Priority Indonesian channels (always included)
 const PRIORITY_CHANNELS: ChannelWithStream[] = [
@@ -85,7 +87,7 @@ export async function GET() {
   try {
     // Check cache first
     const now = Date.now();
-    if (cachedData && (now - cachedData.timestamp) < CACHE_DURATION) {
+    if (cachedData && cachedData.version === CACHE_VERSION && (now - cachedData.timestamp) < CACHE_DURATION) {
       console.log('Returning cached channels with streams');
       return NextResponse.json(cachedData.channels, {
         headers: {
@@ -140,16 +142,34 @@ export async function GET() {
       const channelStreams = streamsByChannel.get(channelId);
       if (!channelStreams || channelStreams.length === 0) return null;
 
+      // SPECIAL: For TVRI, prioritize DENS.TV feed (World Cup broadcaster)
+      // DENS.TV 480p feed is the one that airs World Cup content
+      if (channelId === 'TVRI.id') {
+        const densTvFeed = channelStreams.find(s => 
+          s.url?.includes('dens.tv')
+        );
+        if (densTvFeed) {
+          console.log('✅ TVRI: Using DENS.TV feed (World Cup broadcaster)');
+          return densTvFeed;
+        }
+      }
+
       // Priority 1: Find "Nasional" or main feed (exact title match with channel)
       const mainFeed = channelStreams.find(s => 
         s.title?.toLowerCase().includes('nasional') ||
-        s.url?.toLowerCase().includes('nasional') ||
-        (s.title && s.title.split(' ').length <= 2) // Simple name like "TVRI" not "TVRI Aceh"
+        s.url?.toLowerCase().includes('nasional')
       );
 
       if (mainFeed) return mainFeed;
 
-      // Priority 2: HD quality > 720p > no quality specified
+      // Priority 2: Simple name (2 words) with 480p quality
+      const simpleName = channelStreams.find(s =>
+        s.title && s.title.split(' ').length <= 2 && s.quality === '480p'
+      );
+
+      if (simpleName) return simpleName;
+
+      // Priority 3: HD quality > 720p > no quality specified
       const priorities: Record<string, number> = {
         '1080i': 6,
         '1080p': 5,
@@ -215,7 +235,8 @@ export async function GET() {
     // Update cache
     cachedData = {
       channels: channelsWithWorkingStreams,
-      timestamp: now
+      timestamp: now,
+      version: CACHE_VERSION
     };
 
     return NextResponse.json(channelsWithWorkingStreams, {
