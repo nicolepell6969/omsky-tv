@@ -26,10 +26,33 @@ export async function GET() {
     );
     const channels = response.data;
     
-    // Filter: remove closed, NSFW, and limit to 5000 channels for performance
-    const activeChannels = channels
-      .filter((c) => !c.closed && !c.is_nsfw)
-      .slice(0, 5000); // Limit to first 5000 channels
+    // Filter: Focus on Indonesia & Asia region
+    const asiaCountries = [
+      'ID', 'MY', 'SG', 'TH', 'PH', 'VN', 'KH', 'LA', 'MM', 'BN', // Southeast Asia
+      'JP', 'KR', 'CN', 'TW', 'HK', 'MO', // East Asia
+      'IN', 'PK', 'BD', 'LK', 'NP', 'BT', 'MV', // South Asia
+      'AE', 'SA', 'QA', 'KW', 'OM', 'BH', 'JO', 'LB', 'TR', 'IL', // Middle East
+    ];
+    
+    // Priority: Indonesia first, then Asia, then rest of world
+    const indonesiaChannels = channels.filter(
+      (c) => !c.closed && !c.is_nsfw && c.country === 'ID'
+    );
+    
+    const asiaChannels = channels.filter(
+      (c) => !c.closed && !c.is_nsfw && c.country !== 'ID' && asiaCountries.includes(c.country)
+    );
+    
+    const otherChannels = channels.filter(
+      (c) => !c.closed && !c.is_nsfw && !asiaCountries.includes(c.country)
+    );
+    
+    // Combine: Indonesia + Asia (unlimited) + limited others
+    const activeChannels = [
+      ...indonesiaChannels,
+      ...asiaChannels,
+      ...otherChannels.slice(0, 500) // Only 500 from other regions
+    ];
 
     return NextResponse.json(activeChannels, {
       headers: {
