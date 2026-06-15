@@ -15,20 +15,13 @@ const fetchChannels = async (): Promise<Channel[]> => {
 };
 
 export default function HomePage() {
-  const { searchQuery, selectedCategory, selectedCountry } = useAppStore();
+  const { searchQuery } = useAppStore();
 
   const { data: channels, isLoading, error } = useQuery({
     queryKey: ["channels"],
     queryFn: fetchChannels,
     staleTime: 1000 * 60 * 60, // 1 hour
   });
-
-  const categories = useMemo(() => {
-    if (!channels) return [];
-    const cats = new Set<string>();
-    channels.forEach((c) => c.categories?.forEach((cat) => cats.add(cat)));
-    return Array.from(cats).sort();
-  }, [channels]);
 
   const countries = useMemo(() => {
     if (!channels) return [];
@@ -75,7 +68,7 @@ export default function HomePage() {
             </div>
             <div>
               <h1 className="text-3xl font-bold">Omsky TV</h1>
-              <p className="text-[#b3b3b3]">Watch 5,000+ live TV channels for free</p>
+              <p className="text-[#b3b3b3]">Watch live TV channels from Asia</p>
             </div>
           </div>
           
@@ -96,7 +89,7 @@ export default function HomePage() {
       {/* Main Content */}
       <div className="max-w-7xl mx-auto px-6 py-8">
         {/* Filters */}
-        <FilterBar categories={categories} countries={countries} />
+        <FilterBar countries={countries} />
 
         {/* Channel Grid */}
         <div className="mt-8">
