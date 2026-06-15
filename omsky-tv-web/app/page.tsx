@@ -3,8 +3,9 @@
 import { useQuery } from "@tanstack/react-query";
 import { ChannelGrid } from "@/components/ChannelGrid";
 import { SearchBar } from "@/components/SearchBar";
+import { Pagination } from "@/components/Pagination";
 import { Loader2, Tv } from "lucide-react";
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { useAppStore } from "@/lib/store";
 import type { Channel } from "@/lib/types";
 
@@ -14,8 +15,11 @@ const fetchChannels = async (): Promise<Channel[]> => {
   return res.json();
 };
 
+const CHANNELS_PER_PAGE = 48;
+
 export default function HomePage() {
   const { searchQuery, selectedCountry } = useAppStore();
+  const [currentPage, setCurrentPage] = useState(1);
 
   const { data: channels, isLoading, error } = useQuery({
     queryKey: ["channels"],
@@ -48,6 +52,23 @@ export default function HomePage() {
     
     return result;
   }, [channels, searchQuery, selectedCountry]);
+
+  // Reset to page 1 when filters change
+  useMemo(() => {
+    setCurrentPage(1);
+  }, [searchQuery, selectedCountry]);
+
+  // Pagination calculations
+  const totalPages = Math.ceil(filteredChannels.length / CHANNELS_PER_PAGE);
+  const startIndex = (currentPage - 1) * CHANNELS_PER_PAGE;
+  const endIndex = startIndex + CHANNELS_PER_PAGE;
+  const paginatedChannels = filteredChannels.slice(startIndex, endIndex);
+
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page);
+    // Scroll to top smoothly
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
 
   if (isLoading) {
     return (
@@ -90,7 +111,7 @@ export default function HomePage() {
               Omsky TV
             </h1>
             <p className="text-[16px] text-[#b3b3b3] max-w-2xl">
-              {channels?.length.toLocaleString() || '5,000+'} live channels • {countries.length} countries
+              {filteredChannels.length.toLocaleString()} channels {searchQuery || selectedCountry !== "all" ? 'found' : ''} • {countries.length} countries
             </p>
           </div>
 
@@ -105,7 +126,7 @@ export default function HomePage() {
         {(searchQuery || selectedCountry !== "all") && (
           <div className="mb-6">
             <p className="text-[14px] text-[#b3b3b3]">
-              {filteredChannels.length.toLocaleString()} channels
+              Showing {startIndex + 1}-{Math.min(endIndex, filteredChannels.length)} of {filteredChannels.length.toLocaleString()} channels
               {searchQuery && ` matching "${searchQuery}"`}
               {selectedCountry && selectedCountry !== "all" && ` from ${selectedCountry}`}
             </p>
@@ -113,7 +134,7 @@ export default function HomePage() {
         )}
 
         {/* Channel Grid */}
-        <ChannelGrid channels={filteredChannels} />
+        <ChannelGrid channels={paginatedChannels} />
 
         {/* Empty State */}
         {filteredChannels.length === 0 && (
@@ -122,6 +143,15 @@ export default function HomePage() {
             <h3 className="text-[16px] font-bold mb-2">No channels found</h3>
             <p className="text-[14px] text-[#b3b3b3]">Try a different search or filter</p>
           </div>
+        )}
+
+        {/* Pagination */}
+        {totalPages > 1 && (
+          <Pagination
+            currentPage={currentPage}
+            totalPages={totalPages}
+            onPageChange={handlePageChange}
+          />
         )}
       </div>
 

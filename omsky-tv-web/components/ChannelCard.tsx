@@ -4,6 +4,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { Play, Tv } from "lucide-react";
 import type { Channel } from "@/lib/types";
+import { useState } from "react";
 
 interface ChannelCardProps {
   channel: Channel;
@@ -33,28 +34,30 @@ function getChannelLogoUrl(channel: Channel): string {
 
 export function ChannelCard({ channel }: ChannelCardProps) {
   const logoUrl = getChannelLogoUrl(channel);
+  const [imageError, setImageError] = useState(false);
   
   return (
     <Link href={`/watch/${channel.id}`} className="block group">
       <div className="spotify-card relative">
         {/* Image Container */}
         <div className="relative aspect-square mb-4 bg-[#282828] rounded-md overflow-hidden">
-          <Image
-            src={logoUrl}
-            alt={channel.name}
-            fill
-            className="object-cover group-hover:scale-105 transition-transform duration-300 p-4"
-            sizes="(max-width: 768px) 50vw, (max-width: 1024px) 33vw, 20vw"
-            onError={(e) => {
-              // Fallback to icon on error
-              e.currentTarget.style.display = 'none';
-            }}
-          />
+          {!imageError && (
+            <Image
+              src={logoUrl}
+              alt={channel.name}
+              fill
+              className="object-contain group-hover:scale-105 transition-transform duration-300 p-4"
+              sizes="(max-width: 768px) 50vw, (max-width: 1024px) 33vw, 20vw"
+              onError={() => setImageError(true)}
+            />
+          )}
           
           {/* Fallback Icon */}
-          <div className="absolute inset-0 flex items-center justify-center text-[#535353]">
-            <Tv className="w-16 h-16" strokeWidth={1.5} />
-          </div>
+          {imageError && (
+            <div className="absolute inset-0 flex items-center justify-center text-[#535353]">
+              <Tv className="w-16 h-16" strokeWidth={1.5} />
+            </div>
+          )}
           
           {/* Play Button Overlay - Spotify Style */}
           <div className="absolute bottom-2 right-2 w-12 h-12 bg-[#1ed760] rounded-full flex items-center justify-center shadow-[0_8px_24px_rgba(0,0,0,0.5)] opacity-0 translate-y-2 group-hover:opacity-100 group-hover:translate-y-0 transition-all duration-300">
