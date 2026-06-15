@@ -83,7 +83,7 @@ export default function HomePage() {
   return (
     <div className="min-h-screen pb-20">
       {/* Hero Section */}
-      <div className="bg-gradient-to-b from-[#1f1f1f] via-[#181818] to-[#121212] pt-20 pb-12">
+      <div className="bg-gradient-to-b from-[#1f1f1f] via-[#181818] to-[#121212] pt-20 pb-12 lg:pt-20 pt-24">
         <div className="max-w-[1800px] mx-auto px-6">
           <div className="space-y-4 mb-8">
             <h1 className="text-[48px] md:text-[72px] font-black tracking-tight leading-none">
