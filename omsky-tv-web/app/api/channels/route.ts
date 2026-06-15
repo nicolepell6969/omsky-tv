@@ -41,6 +41,46 @@ let cachedData: {
 
 const CACHE_DURATION = 3600 * 1000; // 1 hour in milliseconds
 
+// Priority Indonesian channels (always included)
+const PRIORITY_CHANNELS: ChannelWithStream[] = [
+  {
+    id: 'TVRI.id',
+    name: 'TVRI Nasional',
+    country: 'ID',
+    categories: ['general'],
+    is_nsfw: false,
+    closed: null,
+    website: 'https://tvri.go.id',
+    logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/e/eb/TVRILogo2019.svg/960px-TVRILogo2019.svg.png',
+    streamUrl: 'https://ott-balancer.tvri.go.id/live/eds/Nasional/hls/Nasional.m3u8',
+    streamQuality: '1080p',
+  },
+  {
+    id: 'TVRISport.id',
+    name: 'TVRI Sport',
+    country: 'ID',
+    categories: ['sports'],
+    is_nsfw: false,
+    closed: null,
+    website: 'https://tvri.go.id',
+    logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/9/9e/TVRI_Sport_2022.svg/960px-TVRI_Sport_2022.svg.png',
+    streamUrl: 'https://ott-balancer.tvri.go.id/live/eds/SportHD/hls/SportHD.m3u8',
+    streamQuality: '720p',
+  },
+  {
+    id: 'TVRIWorld.id',
+    name: 'TVRI World',
+    country: 'ID',
+    categories: ['general'],
+    is_nsfw: false,
+    closed: null,
+    website: 'https://tvri.go.id',
+    logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/e/eb/TVRILogo2019.svg/960px-TVRILogo2019.svg.png',
+    streamUrl: 'https://ott-balancer.tvri.go.id/live/eds/TVRIWorld/hls/TVRIWorld.m3u8',
+    streamQuality: '720p',
+  },
+];
+
 export async function GET() {
   try {
     // Check cache first
@@ -100,8 +140,18 @@ export async function GET() {
       const channelStreams = streamsByChannel.get(channelId);
       if (!channelStreams || channelStreams.length === 0) return null;
 
-      // Priority: HD quality > 720p > no quality specified
+      // Priority 1: Find "Nasional" or main feed (exact title match with channel)
+      const mainFeed = channelStreams.find(s => 
+        s.title?.toLowerCase().includes('nasional') ||
+        s.url?.toLowerCase().includes('nasional') ||
+        (s.title && s.title.split(' ').length <= 2) // Simple name like "TVRI" not "TVRI Aceh"
+      );
+
+      if (mainFeed) return mainFeed;
+
+      // Priority 2: HD quality > 720p > no quality specified
       const priorities: Record<string, number> = {
+        '1080i': 6,
         '1080p': 5,
         '720p': 4,
         '576p': 3,
@@ -135,7 +185,7 @@ export async function GET() {
 
     // Priority: Indonesia first, then Asia, then rest of world
     const indonesiaChannels = channelsWithStreams.filter(
-      (c) => c.country === 'ID'
+      (c) => c.country === 'ID' && !PRIORITY_CHANNELS.some(p => p.id === c.id) // Exclude priority channels to avoid duplicates
     );
     
     const asiaChannels = channelsWithStreams.filter(
@@ -148,7 +198,8 @@ export async function GET() {
     
     // Combine: Indonesia + Asia (unlimited) + limited others
     const activeChannels = [
-      ...indonesiaChannels,
+      ...PRIORITY_CHANNELS, // TVRI & priority channels first
+      ...indonesiaChannels, // Other Indonesia channels (duplicates already filtered)
       ...asiaChannels,
       ...otherChannels.slice(0, 500) // Only 500 from other regions
     ];
