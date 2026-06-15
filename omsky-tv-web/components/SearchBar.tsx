@@ -13,27 +13,28 @@ export function SearchBar() {
   };
 
   return (
-    <div className="relative w-full">
-      <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-[#b3b3b3]" />
-      <input
-        type="text"
-        placeholder="Search channels..."
-        value={searchQuery}
-        onChange={(e) => setSearchQuery(e.target.value)}
-        onFocus={() => setIsFocused(true)}
-        onBlur={() => setIsFocused(false)}
-        className={`w-full bg-[#1f1f1f] text-white rounded-full pl-12 pr-12 py-3 outline-none transition-all ${
-          isFocused ? 'ring-1 ring-white' : ''
-        }`}
-      />
-      {searchQuery && (
-        <button
-          onClick={handleClear}
-          className="absolute right-4 top-1/2 transform -translate-y-1/2 p-1 hover:bg-[#2a2a2a] rounded-full transition-colors"
-        >
-          <X className="w-4 h-4 text-[#b3b3b3]" />
-        </button>
-      )}
+    <div className="relative group">
+      <div className="absolute inset-0 bg-gradient-to-r from-[#1ed760]/20 to-[#1db954]/20 rounded-full blur-xl opacity-0 group-focus-within:opacity-100 transition-opacity duration-300"></div>
+      <div className="relative flex items-center">
+        <Search className="absolute left-5 w-5 h-5 text-white/40 group-focus-within:text-[#1ed760] transition-colors duration-300" />
+        <input
+          type="text"
+          placeholder="Search channels..."
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          onFocus={() => setIsFocused(true)}
+          onBlur={() => setIsFocused(false)}
+          className="search-input w-full pl-14 pr-12"
+        />
+        {searchQuery && (
+          <button
+            onClick={handleClear}
+            className="absolute right-4 p-1.5 rounded-full hover:bg-white/10 transition-colors duration-200"
+          >
+            <X className="w-4 h-4 text-white/60 hover:text-white" />
+          </button>
+        )}
+      </div>
     </div>
   );
 }
