@@ -36,7 +36,7 @@ export const useAppStore = create<AppState>()((
       watchHistory: [],
       currentCategory: null,
       currentCountry: null,
-      selectedCategory: null,
+      selectedCategory: "all",
       selectedCountry: "all",
       searchQuery: '',
 

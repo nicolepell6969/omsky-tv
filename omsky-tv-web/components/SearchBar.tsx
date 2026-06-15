@@ -1,6 +1,6 @@
 "use client";
 
-import { Search, X } from "lucide-react";
+import { Search, X, Trophy } from "lucide-react";
 import { useAppStore } from "@/lib/store";
 
 interface SearchBarProps {
@@ -28,7 +28,7 @@ const ASIAN_COUNTRIES = {
 };
 
 export function SearchBar({ countries }: SearchBarProps) {
-  const { searchQuery, setSearchQuery, selectedCountry, setSelectedCountry } = useAppStore();
+  const { searchQuery, setSearchQuery, selectedCountry, setSelectedCountry, selectedCategory, setSelectedCategory } = useAppStore();
 
   // Filter to show only Asian countries that actually have channels
   const asianCountriesWithChannels = Object.keys(ASIAN_COUNTRIES)
@@ -61,6 +61,27 @@ export function SearchBar({ countries }: SearchBarProps) {
             <X className="w-4 h-4" strokeWidth={2.5} />
           </button>
         )}
+      </div>
+
+      {/* Category Filter - Sports Special */}
+      <div className="flex flex-wrap gap-2">
+        <button
+          onClick={() => setSelectedCategory("all")}
+          className={`spotify-chip ${
+            selectedCategory === "all" ? "spotify-chip-active" : ""
+          }`}
+        >
+          All Categories
+        </button>
+        <button
+          onClick={() => setSelectedCategory("sports")}
+          className={`spotify-chip ${
+            selectedCategory === "sports" ? "spotify-chip-active" : ""
+          } flex items-center gap-1.5`}
+        >
+          <Trophy className="w-3.5 h-3.5" strokeWidth={2.5} />
+          Sports & World Cup
+        </button>
       </div>
 
       {/* Country Filter - Asian Countries Only */}

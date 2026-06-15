@@ -18,7 +18,7 @@ const fetchChannels = async (): Promise<Channel[]> => {
 const CHANNELS_PER_PAGE = 48;
 
 export default function HomePage() {
-  const { searchQuery, selectedCountry } = useAppStore();
+  const { searchQuery, selectedCountry, selectedCategory } = useAppStore();
   const [currentPage, setCurrentPage] = useState(1);
 
   const { data: channels, isLoading, error } = useQuery({
@@ -38,6 +38,11 @@ export default function HomePage() {
     
     let result = channels;
     
+    // Filter by category (Sports)
+    if (selectedCategory && selectedCategory !== "all") {
+      result = result.filter((c) => c.categories.includes(selectedCategory));
+    }
+    
     // Filter by search query
     if (searchQuery) {
       result = result.filter((c) =>
@@ -51,12 +56,12 @@ export default function HomePage() {
     }
     
     return result;
-  }, [channels, searchQuery, selectedCountry]);
+  }, [channels, searchQuery, selectedCountry, selectedCategory]);
 
   // Reset to page 1 when filters change
   useMemo(() => {
     setCurrentPage(1);
-  }, [searchQuery, selectedCountry]);
+  }, [searchQuery, selectedCountry, selectedCategory]);
 
   // Pagination calculations
   const totalPages = Math.ceil(filteredChannels.length / CHANNELS_PER_PAGE);
@@ -123,10 +128,11 @@ export default function HomePage() {
       {/* Main Content */}
       <div className="max-w-[1800px] mx-auto px-6 py-8">
         {/* Results Header */}
-        {(searchQuery || selectedCountry !== "all") && (
+        {(searchQuery || selectedCountry !== "all" || selectedCategory !== "all") && (
           <div className="mb-6">
             <p className="text-[14px] text-[#b3b3b3]">
               Showing {startIndex + 1}-{Math.min(endIndex, filteredChannels.length)} of {filteredChannels.length.toLocaleString()} channels
+              {selectedCategory === "sports" && " in Sports & World Cup"}
               {searchQuery && ` matching "${searchQuery}"`}
               {selectedCountry && selectedCountry !== "all" && ` from ${selectedCountry}`}
             </p>
