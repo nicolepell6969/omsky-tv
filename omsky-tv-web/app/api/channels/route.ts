@@ -42,7 +42,7 @@ let cachedData: {
 } | null = null;
 
 const CACHE_DURATION = 3600 * 1000; // 1 hour in milliseconds
-const CACHE_VERSION = '5'; // Increment to invalidate old cache
+const CACHE_VERSION = '6'; // Increment to invalidate old cache
 
 // Priority Indonesian channels (always included)
 const PRIORITY_CHANNELS: ChannelWithStream[] = [
@@ -267,7 +267,10 @@ export async function GET() {
     ];
 
     // Filter out channels without streams
-    const channelsWithWorkingStreams = activeChannels.filter(c => c.streamUrl);
+    const channelsWithWorkingStreams = activeChannels.filter(c => c.streamUrl).map(c => ({
+      ...c,
+      isActive: true // All returned channels are considered active as they have a streamUrl
+    }));
 
     console.log(`Returning ${channelsWithWorkingStreams.length} channels with working streams`);
     console.log(`  - Indonesia: ${indonesiaChannels.filter(c => c.streamUrl).length}`);

@@ -16,6 +16,7 @@ export interface Channel {
   streamQuality?: string;
   http_referrer?: string;
   user_agent?: string;
+  isActive?: boolean;
 }
 
 export interface Stream {
