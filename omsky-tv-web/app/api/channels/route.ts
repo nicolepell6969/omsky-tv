@@ -33,7 +33,7 @@ interface ChannelWithStream extends Channel {
 const IPTV_API_BASE = 'https://iptv-org.github.io/api';
 
 export const dynamic = "force-dynamic";
-export const revalidate = 3600; // 1 hour
+export const revalidate = 300; // 5 minutes (was 3600 / 1 hour)
 
 let cachedData: {
   channels: ChannelWithStream[];
@@ -41,8 +41,8 @@ let cachedData: {
   version: string; // Cache version for invalidation
 } | null = null;
 
-const CACHE_DURATION = 3600 * 1000; // 1 hour in milliseconds
-const CACHE_VERSION = '6'; // Increment to invalidate old cache
+const CACHE_DURATION = 300 * 1000; // 5 minutes in milliseconds (was 1 hour)
+const CACHE_VERSION = '7'; // Increment to invalidate old cache
 
 // Priority Indonesian channels (always included)
 const PRIORITY_CHANNELS: ChannelWithStream[] = [
@@ -128,7 +128,7 @@ export async function GET() {
       console.log('Returning cached channels with streams');
       return NextResponse.json(cachedData.channels, {
         headers: {
-          'Cache-Control': 'public, s-maxage=3600, stale-while-revalidate=7200',
+          'Cache-Control': 'public, s-maxage=300, stale-while-revalidate=600',
         },
       });
     }
@@ -286,7 +286,7 @@ export async function GET() {
 
     return NextResponse.json(channelsWithWorkingStreams, {
       headers: {
-        'Cache-Control': 'public, s-maxage=3600, stale-while-revalidate=7200',
+        'Cache-Control': 'public, s-maxage=300, stale-while-revalidate=600',
       },
     });
   } catch (error) {

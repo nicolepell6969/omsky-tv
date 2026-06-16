@@ -24,7 +24,8 @@ export default function HomePage() {
   const { data: channels, isLoading, error } = useQuery({
     queryKey: ["channels"],
     queryFn: fetchChannels,
-    staleTime: 1000 * 60 * 60,
+    staleTime: 1000 * 60 * 5, // Data dianggap basi dalam 5 menit
+    refetchInterval: 1000 * 60 * 15, // Auto-refresh background setiap 15 menit
   });
 
   const countries = useMemo(() => {

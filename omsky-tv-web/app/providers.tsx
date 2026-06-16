@@ -11,7 +11,8 @@ export function Providers({ children }: { children: React.ReactNode }) {
           queries: {
             staleTime: 1000 * 60 * 5, // 5 minutes
             gcTime: 1000 * 60 * 30, // 30 minutes
-            refetchOnWindowFocus: false,
+            refetchOnWindowFocus: true, // Refetch when user returns to tab
+            refetchOnReconnect: true, // Refetch when connection returns
           },
         },
       })
