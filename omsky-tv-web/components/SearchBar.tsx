@@ -1,6 +1,6 @@
 "use client";
 
-import { Search, X, Trophy } from "lucide-react";
+import { Search, X, Trophy, Film, Gamepad2, Tv } from "lucide-react";
 import { useAppStore } from "@/lib/store";
 
 interface SearchBarProps {
@@ -74,6 +74,15 @@ export function SearchBar({ countries }: SearchBarProps) {
           All Categories
         </button>
         <button
+          onClick={() => setSelectedCategory("national")}
+          className={`spotify-chip ${
+            selectedCategory === "national" ? "spotify-chip-active" : ""
+          } flex items-center gap-1.5`}
+        >
+          <Tv className="w-3.5 h-3.5" strokeWidth={2.5} />
+          TV Nasional
+        </button>
+        <button
           onClick={() => setSelectedCategory("sports")}
           className={`spotify-chip ${
             selectedCategory === "sports" ? "spotify-chip-active" : ""
@@ -81,6 +90,24 @@ export function SearchBar({ countries }: SearchBarProps) {
         >
           <Trophy className="w-3.5 h-3.5" strokeWidth={2.5} />
           Sports & World Cup
+        </button>
+        <button
+          onClick={() => setSelectedCategory("movies")}
+          className={`spotify-chip ${
+            selectedCategory === "movies" ? "spotify-chip-active" : ""
+          } flex items-center gap-1.5`}
+        >
+          <Film className="w-3.5 h-3.5" strokeWidth={2.5} />
+          Movies
+        </button>
+        <button
+          onClick={() => setSelectedCategory("kids")}
+          className={`spotify-chip ${
+            selectedCategory === "kids" ? "spotify-chip-active" : ""
+          } flex items-center gap-1.5`}
+        >
+          <Gamepad2 className="w-3.5 h-3.5" strokeWidth={2.5} />
+          Kids
         </button>
       </div>
 

@@ -1,5 +1,6 @@
 import axios from 'axios';
 import { NextResponse } from "next/server";
+import { fetchPengembaraChannels } from './pengembara';
 
 interface Channel {
   id: string;
@@ -41,7 +42,7 @@ let cachedData: {
 } | null = null;
 
 const CACHE_DURATION = 3600 * 1000; // 1 hour in milliseconds
-const CACHE_VERSION = '4'; // Increment to invalidate old cache
+const CACHE_VERSION = '5'; // Increment to invalidate old cache
 
 // Priority Indonesian channels (always included)
 const PRIORITY_CHANNELS: ChannelWithStream[] = [
@@ -252,9 +253,14 @@ export async function GET() {
       (c) => !asiaCountries.includes(c.country)
     );
     
-    // Combine: Indonesia + Asia (unlimited) + limited others
+    // Fetch and parse Pengembara custom playlist
+    const customChannels = await fetchPengembaraChannels();
+    console.log(`Fetched ${customChannels.length} custom channels from Pengembara`);
+
+    // Combine: Priority + Custom (Pengembara) + Indonesia + Asia (unlimited) + limited others
     const activeChannels = [
       ...PRIORITY_CHANNELS, // TVRI & priority channels first
+      ...customChannels, // New: Add Pengembara channels immediately after priority
       ...indonesiaChannels, // Other Indonesia channels (duplicates already filtered)
       ...asiaChannels,
       ...otherChannels.slice(0, 500) // Only 500 from other regions
