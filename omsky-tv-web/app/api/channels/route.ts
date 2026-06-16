@@ -41,10 +41,32 @@ let cachedData: {
 } | null = null;
 
 const CACHE_DURATION = 3600 * 1000; // 1 hour in milliseconds
-const CACHE_VERSION = '3'; // Increment to invalidate old cache
+const CACHE_VERSION = '4'; // Increment to invalidate old cache
 
 // Priority Indonesian channels (always included)
 const PRIORITY_CHANNELS: ChannelWithStream[] = [
+  {
+    id: 'caze-tv-worldcup',
+    name: 'CAZÉ TV (World Cup BR)',
+    country: 'BR',
+    categories: ['sports'],
+    is_nsfw: false,
+    closed: null,
+    website: null,
+    streamUrl: 'https://dfr80qz435crc.cloudfront.net/MNOP/Amagi/Caze/Caze_TV_BR/Caze_TV.m3u8',
+    streamQuality: '1080p'
+  },
+  {
+    id: 'cctv5-worldcup',
+    name: 'CCTV 5 HD (World Cup CN)',
+    country: 'CN',
+    categories: ['sports'],
+    is_nsfw: false,
+    closed: null,
+    website: null,
+    streamUrl: 'http://74.91.26.218:82/live/cctv5hd.m3u8',
+    streamQuality: '1080p'
+  },
   {
     id: 'piala-dunia-tvri',
     name: 'Piala Dunia (TVRI)',
